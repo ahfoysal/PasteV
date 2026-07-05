@@ -286,6 +286,14 @@ static NSString * const PasteVBundleIdentifier = @"dev.foysal.pastev";
 - (BOOL)isFlipped { return YES; }
 @end
 
+@interface KeyPanel : NSPanel
+@end
+
+@implementation KeyPanel
+- (BOOL)canBecomeKeyWindow { return YES; }
+- (BOOL)canBecomeMainWindow { return YES; }
+@end
+
 @interface ClipboardRowView : NSView
 @property (nonatomic, strong) ClipboardItem *item;
 @property (nonatomic, copy) void (^pickHandler)(ClipboardItem *);
@@ -391,6 +399,7 @@ static NSString * const PasteVBundleIdentifier = @"dev.foysal.pastev";
     NSScrollView *_scrollView;
     NSTextField *_footer;
     id _outsideMonitor;
+    id _keyMonitor;
     BOOL _didShowCopyFallbackNotice;
 }
 
@@ -421,7 +430,7 @@ static NSString * const PasteVBundleIdentifier = @"dev.foysal.pastev";
 
     NSSize panelSize = [self panelSizeForItemCount:self.store.items.count];
     NSRect frame = NSMakeRect(0, 0, panelSize.width, panelSize.height);
-    _panel = [[NSPanel alloc] initWithContentRect:frame styleMask:NSWindowStyleMaskNonactivatingPanel | NSWindowStyleMaskFullSizeContentView backing:NSBackingStoreBuffered defer:NO];
+    _panel = [[KeyPanel alloc] initWithContentRect:frame styleMask:NSWindowStyleMaskBorderless | NSWindowStyleMaskFullSizeContentView backing:NSBackingStoreBuffered defer:NO];
     _panel.level = NSFloatingWindowLevel;
     _panel.floatingPanel = YES;
     _panel.opaque = NO;
@@ -477,7 +486,8 @@ static NSString * const PasteVBundleIdentifier = @"dev.foysal.pastev";
 
     [self rebuildRows];
     [self positionPanelAtMouse];
-    [_panel orderFrontRegardless];
+    [NSApp activateIgnoringOtherApps:YES];
+    [_panel makeKeyAndOrderFront:nil];
 
     __weak typeof(self) weakSelf = self;
     _outsideMonitor = [NSEvent addGlobalMonitorForEventsMatchingMask:NSEventMaskLeftMouseDown | NSEventMaskRightMouseDown handler:^(NSEvent *event) {
@@ -489,6 +499,14 @@ static NSString * const PasteVBundleIdentifier = @"dev.foysal.pastev";
             return;
         }
         [strongSelf close];
+    }];
+
+    _keyMonitor = [NSEvent addLocalMonitorForEventsMatchingMask:NSEventMaskKeyDown handler:^NSEvent *(NSEvent *event) {
+        __strong typeof(weakSelf) strongSelf = weakSelf;
+        if (!strongSelf || !strongSelf->_panel.visible) {
+            return event;
+        }
+        return [strongSelf handleShortcutEvent:event] ? nil : event;
     }];
 }
 
@@ -519,7 +537,7 @@ static NSString * const PasteVBundleIdentifier = @"dev.foysal.pastev";
 
     NSArray *items = [self.store orderedItemsMatching:@""];
     NSString *permission = [self.pasteController isAccessibilityTrusted] ? @"Auto-paste on" : @"Auto-paste off";
-    _footer.stringValue = [NSString stringWithFormat:@"%@ • %lu items", permission, (unsigned long)self.store.items.count];
+    _footer.stringValue = [NSString stringWithFormat:@"%@ • Enter/1-9 paste • Esc close", permission];
 
     _scrollView.hasVerticalScroller = items.count > [self maxVisibleRows];
 
@@ -579,6 +597,10 @@ static NSString * const PasteVBundleIdentifier = @"dev.foysal.pastev";
         [NSEvent removeMonitor:_outsideMonitor];
         _outsideMonitor = nil;
     }
+    if (_keyMonitor) {
+        [NSEvent removeMonitor:_keyMonitor];
+        _keyMonitor = nil;
+    }
     [_panel close];
     _panel = nil;
 }
@@ -601,6 +623,55 @@ static NSString * const PasteVBundleIdentifier = @"dev.foysal.pastev";
     alert.informativeText = @"macOS is blocking automatic paste. Press Command + V in the target app, or choose Fix Accessibility Permission from the PasteV menu bar icon.";
     [alert addButtonWithTitle:@"OK"];
     [alert runModal];
+}
+
+- (BOOL)handleShortcutEvent:(NSEvent *)event {
+    if (event.keyCode == kVK_Escape) {
+        [self close];
+        return YES;
+    }
+    if (event.keyCode == kVK_Return) {
+        [self pickItemAtIndex:0];
+        return YES;
+    }
+
+    NSInteger index = [self itemIndexForNumberKeyCode:event.keyCode];
+    if (index >= 0) {
+        [self pickItemAtIndex:(NSUInteger)index];
+        return YES;
+    }
+    return NO;
+}
+
+- (NSInteger)itemIndexForNumberKeyCode:(unsigned short)keyCode {
+    switch (keyCode) {
+        case kVK_ANSI_1: return 0;
+        case kVK_ANSI_2: return 1;
+        case kVK_ANSI_3: return 2;
+        case kVK_ANSI_4: return 3;
+        case kVK_ANSI_5: return 4;
+        case kVK_ANSI_6: return 5;
+        case kVK_ANSI_7: return 6;
+        case kVK_ANSI_8: return 7;
+        case kVK_ANSI_9: return 8;
+        default: return -1;
+    }
+}
+
+- (void)pickItemAtIndex:(NSUInteger)index {
+    NSArray *items = [self.store orderedItemsMatching:@""];
+    if (index >= items.count) {
+        return;
+    }
+    ClipboardItem *picked = items[index];
+    [self.store copyItemToPasteboard:picked];
+    [self close];
+    dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(0.08 * NSEC_PER_SEC)), dispatch_get_main_queue(), ^{
+        BOOL didPaste = [self.pasteController pasteIntoRememberedTarget];
+        if (!didPaste) {
+            [self showCopyFallbackNoticeIfNeeded];
+        }
+    });
 }
 
 - (NSUInteger)maxVisibleRows {
