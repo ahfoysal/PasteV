@@ -38,7 +38,7 @@ https://pastev.vercel.app
 
 ## Install
 
-1. Download `PasteV-0.1.3.dmg` from the latest release.
+1. Download `PasteV-0.1.4.dmg` from the latest release.
 2. Open the DMG.
 3. Drag `PasteV.app` into `Applications`.
 4. Open PasteV.
@@ -72,7 +72,7 @@ cd /Users/foysal/Projects/PasteV
 The DMG is created at:
 
 ```text
-Releases/PasteV-0.1.3.dmg
+Releases/PasteV-0.1.4.dmg
 ```
 
 ## Landing Page

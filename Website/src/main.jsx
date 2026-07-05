@@ -120,7 +120,7 @@ function App() {
       <section id="install" className="install">
         <p className="eyebrow">▚ TWO MINUTES</p>
         <h2>BRING IT HOME</h2>
-        <pre><code>{`curl -L https://github.com/ahfoysal/PasteV/releases/latest/download/PasteV-0.1.3.dmg -o PasteV.dmg
+        <pre><code>{`curl -L https://github.com/ahfoysal/PasteV/releases/latest/download/PasteV-0.1.4.dmg -o PasteV.dmg
 open PasteV.dmg
 # drag PasteV to Applications
 # enable PasteV in Privacy & Security > Accessibility`}</code></pre>

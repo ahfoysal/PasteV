@@ -666,10 +666,14 @@ static OSStatus HotKeyHandler(EventHandlerCallRef nextHandler, EventRef event, v
 }
 
 - (void)installStatusItem {
-    _statusItem = [NSStatusBar.systemStatusBar statusItemWithLength:NSVariableStatusItemLength];
+    _statusItem = [NSStatusBar.systemStatusBar statusItemWithLength:NSSquareStatusItemLength];
     NSImage *statusImage = [NSImage imageNamed:@"StatusIconTemplate"];
     statusImage.template = YES;
-    _statusItem.button.image = statusImage ?: [NSImage imageWithSystemSymbolName:@"doc.on.clipboard" accessibilityDescription:@"PasteV"];
+    statusImage.size = NSMakeSize(18, 18);
+    NSImage *fallbackImage = [NSImage imageWithSystemSymbolName:@"doc.on.clipboard" accessibilityDescription:@"PasteV"];
+    fallbackImage.size = NSMakeSize(18, 18);
+    _statusItem.button.image = statusImage ?: fallbackImage;
+    _statusItem.button.imagePosition = NSImageOnly;
 
     NSMenu *menu = [[NSMenu alloc] initWithTitle:@"PasteV"];
     [menu addItem:[[NSMenuItem alloc] initWithTitle:@"Show Clipboard" action:@selector(showClipboard:) keyEquivalent:@""]];
