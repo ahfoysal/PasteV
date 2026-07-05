@@ -3,6 +3,7 @@ set -euo pipefail
 
 ROOT_DIR="$(cd "$(dirname "$0")/.." && pwd)"
 APP_NAME="PasteV"
+VERSION="${VERSION:-0.1.1}"
 BUILD_CONFIG="${BUILD_CONFIG:-release}"
 APP_DIR="$ROOT_DIR/.build/${APP_NAME}.app"
 INSTALL_DIR="${INSTALL_DIR:-$HOME/Applications/${APP_NAME}.app}"
@@ -11,6 +12,7 @@ MACOS_DIR="$CONTENTS_DIR/MacOS"
 RESOURCES_DIR="$CONTENTS_DIR/Resources"
 
 cd "$ROOT_DIR"
+"$ROOT_DIR/Scripts/generate-assets.py" >/dev/null
 mkdir -p "$ROOT_DIR/.build/$BUILD_CONFIG"
 clang -fobjc-arc \
     -framework AppKit \
@@ -22,6 +24,8 @@ clang -fobjc-arc \
 rm -rf "$APP_DIR"
 mkdir -p "$MACOS_DIR" "$RESOURCES_DIR"
 cp "$ROOT_DIR/.build/$BUILD_CONFIG/$APP_NAME" "$MACOS_DIR/$APP_NAME"
+cp "$ROOT_DIR/Assets/PasteV.icns" "$RESOURCES_DIR/PasteV.icns"
+cp "$ROOT_DIR/Assets/StatusIconTemplate.png" "$RESOURCES_DIR/StatusIconTemplate.png"
 
 cat > "$CONTENTS_DIR/Info.plist" <<PLIST
 <?xml version="1.0" encoding="UTF-8"?>
@@ -38,8 +42,10 @@ cat > "$CONTENTS_DIR/Info.plist" <<PLIST
     <string>$APP_NAME</string>
     <key>CFBundlePackageType</key>
     <string>APPL</string>
+    <key>CFBundleIconFile</key>
+    <string>PasteV</string>
     <key>CFBundleShortVersionString</key>
-    <string>0.1.0</string>
+    <string>$VERSION</string>
     <key>CFBundleVersion</key>
     <string>1</string>
     <key>LSMinimumSystemVersion</key>

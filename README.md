@@ -1,3 +1,7 @@
+<p align="center">
+  <img src="Assets/logo.svg" width="120" alt="PasteV logo">
+</p>
+
 # PasteV
 
 Windows-style clipboard history for macOS.
@@ -32,7 +36,7 @@ Landing page source is in `Website/` and is ready for Vercel deployment.
 
 ## Install
 
-1. Download `PasteV-0.1.0.dmg` from the latest release.
+1. Download `PasteV-0.1.1.dmg` from the latest release.
 2. Open the DMG.
 3. Drag `PasteV.app` into `Applications`.
 4. Open PasteV.
@@ -64,7 +68,7 @@ cd /Users/foysal/Projects/PasteV
 The DMG is created at:
 
 ```text
-Releases/PasteV-0.1.0.dmg
+Releases/PasteV-0.1.1.dmg
 ```
 
 ## Landing Page

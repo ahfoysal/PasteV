@@ -3,7 +3,7 @@ set -euo pipefail
 
 ROOT_DIR="$(cd "$(dirname "$0")/.." && pwd)"
 APP_NAME="PasteV"
-VERSION="${VERSION:-0.1.0}"
+VERSION="${VERSION:-0.1.1}"
 APP_PATH="${APP_PATH:-$HOME/Applications/${APP_NAME}.app}"
 RELEASE_DIR="$ROOT_DIR/Releases"
 STAGING_DIR="$ROOT_DIR/.build/dmg"

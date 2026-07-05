@@ -44,7 +44,7 @@ function App() {
     <main>
       <nav className="topbar">
         <a className="brand" href="/">
-          <Clipboard size={18} />
+          <img src="/logo.svg" alt="" className="brand-logo" />
           PASTEV
         </a>
         <div className="navlinks">
@@ -61,6 +61,7 @@ function App() {
       <section className="hero">
         <div className="hero-copy">
           <p className="eyebrow">▸ CONTROL + V · MACOS</p>
+          <img src="/logo.svg" alt="PasteV logo" className="hero-logo" />
           <h1>PASTEV</h1>
           <p className="lede">
             A tiny macOS clipboard history panel that opens where your mouse is, keeps pinned snippets close,
@@ -119,7 +120,7 @@ function App() {
       <section id="install" className="install">
         <p className="eyebrow">▚ TWO MINUTES</p>
         <h2>BRING IT HOME</h2>
-        <pre><code>{`curl -L https://github.com/ahfoysal/PasteV/releases/latest/download/PasteV-0.1.0.dmg -o PasteV.dmg
+        <pre><code>{`curl -L https://github.com/ahfoysal/PasteV/releases/latest/download/PasteV-0.1.1.dmg -o PasteV.dmg
 open PasteV.dmg
 # drag PasteV to Applications
 # enable PasteV in Privacy & Security > Accessibility`}</code></pre>

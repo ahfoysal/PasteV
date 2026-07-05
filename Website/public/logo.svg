@@ -1,0 +1,33 @@
+<svg width="1024" height="1024" viewBox="0 0 1024 1024" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="bg" x1="150" y1="120" x2="890" y2="930" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#2B241B"/>
+      <stop offset="0.54" stop-color="#17140F"/>
+      <stop offset="1" stop-color="#0F2A24"/>
+    </linearGradient>
+    <linearGradient id="paper" x1="285" y1="225" x2="745" y2="780" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#FFF2C4"/>
+      <stop offset="1" stop-color="#D7C48B"/>
+    </linearGradient>
+    <linearGradient id="accent" x1="315" y1="270" x2="730" y2="735" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#F6C84C"/>
+      <stop offset="1" stop-color="#5BD7A4"/>
+    </linearGradient>
+    <filter id="shadow" x="130" y="140" width="800" height="820" filterUnits="userSpaceOnUse" color-interpolation-filters="sRGB">
+      <feDropShadow dx="0" dy="34" stdDeviation="38" flood-color="#000000" flood-opacity="0.45"/>
+    </filter>
+  </defs>
+  <rect x="64" y="64" width="896" height="896" rx="220" fill="url(#bg)"/>
+  <path d="M288 224H736C780.2 224 816 259.8 816 304V752C816 796.2 780.2 832 736 832H288C243.8 832 208 796.2 208 752V304C208 259.8 243.8 224 288 224Z" fill="#0B0A08" fill-opacity="0.28"/>
+  <g filter="url(#shadow)">
+    <path d="M316 214H708C754.4 214 792 251.6 792 298V754C792 800.4 754.4 838 708 838H316C269.6 838 232 800.4 232 754V298C232 251.6 269.6 214 316 214Z" fill="url(#paper)"/>
+    <path d="M328 306H696" stroke="#6F6140" stroke-width="34" stroke-linecap="round"/>
+    <path d="M328 418H602" stroke="#6F6140" stroke-width="34" stroke-linecap="round" opacity="0.55"/>
+    <path d="M328 530H540" stroke="#6F6140" stroke-width="34" stroke-linecap="round" opacity="0.45"/>
+    <path d="M388 150H636C657 150 674 167 674 188V272H350V188C350 167 367 150 388 150Z" fill="#17140F"/>
+    <path d="M434 150C444 111 475 84 512 84C549 84 580 111 590 150" stroke="#F6C84C" stroke-width="42" stroke-linecap="round"/>
+    <path d="M396 220H628" stroke="#5BD7A4" stroke-width="32" stroke-linecap="round"/>
+  </g>
+  <path d="M648 384L426 596H558L494 742L716 514H584L648 384Z" fill="url(#accent)"/>
+  <path d="M648 384L426 596H558L494 742L716 514H584L648 384Z" stroke="#17140F" stroke-width="24" stroke-linejoin="round"/>
+</svg>

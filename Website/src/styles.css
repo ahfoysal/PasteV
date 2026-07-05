@@ -52,6 +52,20 @@ main {
   color: var(--hot);
 }
 
+.brand-logo {
+  width: 24px;
+  height: 24px;
+  display: block;
+}
+
+.hero-logo {
+  width: 84px;
+  height: 84px;
+  display: block;
+  margin: 0 0 18px;
+  filter: drop-shadow(6px 6px 0 #4d2b1d);
+}
+
 .navlinks {
   color: var(--muted);
   font-size: 13px;
