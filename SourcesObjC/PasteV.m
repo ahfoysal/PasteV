@@ -386,6 +386,10 @@ static NSString * const PasteVDefaultsKey = @"PasteV.clipboardItems.objc";
 }
 
 - (void)showAtMouse {
+    if (_panel) {
+        [self close];
+    }
+
     [self.pasteController rememberCurrentTarget];
 
     NSSize panelSize = [self panelSizeForItemCount:self.store.items.count];
