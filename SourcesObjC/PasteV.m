@@ -296,25 +296,33 @@ static NSString * const PasteVBundleIdentifier = @"dev.foysal.pastev";
 
 @interface ClipboardRowView : NSView
 @property (nonatomic, strong) ClipboardItem *item;
+@property (nonatomic) NSInteger shortcutIndex;
+@property (nonatomic) BOOL selected;
 @property (nonatomic, copy) void (^pickHandler)(ClipboardItem *);
 @property (nonatomic, copy) void (^copyOnlyHandler)(ClipboardItem *);
 @property (nonatomic, copy) void (^pinHandler)(ClipboardItem *);
 @property (nonatomic, copy) void (^deleteHandler)(ClipboardItem *);
+- (instancetype)initWithItem:(ClipboardItem *)item shortcutIndex:(NSInteger)shortcutIndex selected:(BOOL)selected;
 @end
 
 @implementation ClipboardRowView {
     NSTextField *_textLabel;
     NSTextField *_metaLabel;
     NSImageView *_iconView;
+    NSTextField *_shortcutLabel;
 }
 
-- (instancetype)initWithItem:(ClipboardItem *)item {
+- (instancetype)initWithItem:(ClipboardItem *)item shortcutIndex:(NSInteger)shortcutIndex selected:(BOOL)selected {
     self = [super initWithFrame:NSMakeRect(0, 0, 390, 64)];
     if (self) {
         self.item = item;
+        self.shortcutIndex = shortcutIndex;
+        self.selected = selected;
         self.wantsLayer = YES;
         self.layer.cornerRadius = 8;
-        self.layer.backgroundColor = [NSColor colorWithWhite:1 alpha:0.07].CGColor;
+        self.layer.backgroundColor = (selected ? [NSColor colorWithRed:0.18 green:0.48 blue:0.40 alpha:0.28] : [NSColor colorWithWhite:1 alpha:0.07]).CGColor;
+        self.layer.borderWidth = selected ? 1 : 0;
+        self.layer.borderColor = [NSColor colorWithRed:0.36 green:0.84 blue:0.64 alpha:0.48].CGColor;
 
         _iconView = [[NSImageView alloc] initWithFrame:NSMakeRect(10, 40, 18, 18)];
         _iconView.image = [NSImage imageWithSystemSymbolName:item.pinned ? @"pin.fill" : @"doc.text" accessibilityDescription:nil];
@@ -333,6 +341,15 @@ static NSString * const PasteVBundleIdentifier = @"dev.foysal.pastev";
         _metaLabel.font = [NSFont systemFontOfSize:11];
         _metaLabel.textColor = NSColor.secondaryLabelColor;
         [self addSubview:_metaLabel];
+
+        if (shortcutIndex >= 1 && shortcutIndex <= 9) {
+            _shortcutLabel = [NSTextField labelWithString:[NSString stringWithFormat:@"%ld", (long)shortcutIndex]];
+            _shortcutLabel.frame = NSMakeRect(360, 39, 18, 16);
+            _shortcutLabel.font = [NSFont monospacedDigitSystemFontOfSize:12 weight:NSFontWeightSemibold];
+            _shortcutLabel.alignment = NSTextAlignmentCenter;
+            _shortcutLabel.textColor = selected ? NSColor.controlAccentColor : NSColor.secondaryLabelColor;
+            [self addSubview:_shortcutLabel];
+        }
     }
     return self;
 }
@@ -401,6 +418,7 @@ static NSString * const PasteVBundleIdentifier = @"dev.foysal.pastev";
     id _outsideMonitor;
     id _keyMonitor;
     BOOL _didShowCopyFallbackNotice;
+    NSUInteger _selectedIndex;
 }
 
 - (instancetype)initWithStore:(ClipboardStore *)store pasteController:(PasteController *)pasteController {
@@ -427,6 +445,7 @@ static NSString * const PasteVBundleIdentifier = @"dev.foysal.pastev";
     }
 
     [self.pasteController rememberCurrentTarget];
+    _selectedIndex = 0;
 
     NSSize panelSize = [self panelSizeForItemCount:self.store.items.count];
     NSRect frame = NSMakeRect(0, 0, panelSize.width, panelSize.height);
@@ -536,8 +555,11 @@ static NSString * const PasteVBundleIdentifier = @"dev.foysal.pastev";
     }
 
     NSArray *items = [self.store orderedItemsMatching:@""];
+    if (_selectedIndex >= items.count) {
+        _selectedIndex = items.count > 0 ? items.count - 1 : 0;
+    }
     NSString *permission = [self.pasteController isAccessibilityTrusted] ? @"Auto-paste on" : @"Auto-paste off";
-    _footer.stringValue = [NSString stringWithFormat:@"%@ • Enter/1-9 paste • Esc close", permission];
+    _footer.stringValue = [NSString stringWithFormat:@"%@ • ↑↓ select • Enter/1-9 paste", permission];
 
     _scrollView.hasVerticalScroller = items.count > [self maxVisibleRows];
 
@@ -555,8 +577,9 @@ static NSString * const PasteVBundleIdentifier = @"dev.foysal.pastev";
     __weak typeof(self) weakSelf = self;
     CGFloat y = 8;
     CGFloat rowWidth = _scrollView.frame.size.width - 18;
+    NSUInteger rowIndex = 0;
     for (ClipboardItem *item in items) {
-        ClipboardRowView *row = [[ClipboardRowView alloc] initWithItem:item];
+        ClipboardRowView *row = [[ClipboardRowView alloc] initWithItem:item shortcutIndex:(rowIndex < 9 ? (NSInteger)rowIndex + 1 : 0) selected:(rowIndex == _selectedIndex)];
         row.frame = NSMakeRect(8, y, rowWidth, 64);
         row.pickHandler = ^(ClipboardItem *picked) {
             [weakSelf.store copyItemToPasteboard:picked];
@@ -580,6 +603,7 @@ static NSString * const PasteVBundleIdentifier = @"dev.foysal.pastev";
         };
         [_listContent addSubview:row];
         y += 70;
+        rowIndex++;
     }
 
     CGFloat height = MAX(_scrollView.frame.size.height, y + 8);
@@ -631,7 +655,15 @@ static NSString * const PasteVBundleIdentifier = @"dev.foysal.pastev";
         return YES;
     }
     if (event.keyCode == kVK_Return) {
-        [self pickItemAtIndex:0];
+        [self pickItemAtIndex:_selectedIndex];
+        return YES;
+    }
+    if (event.keyCode == kVK_UpArrow) {
+        [self moveSelectionBy:-1];
+        return YES;
+    }
+    if (event.keyCode == kVK_DownArrow) {
+        [self moveSelectionBy:1];
         return YES;
     }
 
@@ -672,6 +704,24 @@ static NSString * const PasteVBundleIdentifier = @"dev.foysal.pastev";
             [self showCopyFallbackNoticeIfNeeded];
         }
     });
+}
+
+- (void)moveSelectionBy:(NSInteger)delta {
+    NSArray *items = [self.store orderedItemsMatching:@""];
+    if (items.count == 0) {
+        _selectedIndex = 0;
+        return;
+    }
+
+    NSInteger next = (NSInteger)_selectedIndex + delta;
+    if (next < 0) {
+        next = 0;
+    }
+    if (next >= (NSInteger)items.count) {
+        next = (NSInteger)items.count - 1;
+    }
+    _selectedIndex = (NSUInteger)next;
+    [self rebuildRows];
 }
 
 - (NSUInteger)maxVisibleRows {
