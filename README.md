@@ -12,9 +12,7 @@ Download the latest DMG from:
 
 https://github.com/ahfoysal/PasteV/releases/latest
 
-Landing page:
-
-https://pastev.vercel.app
+Landing page source is in `Website/` and is ready for Vercel deployment.
 
 ## Preview
 
@@ -77,6 +75,7 @@ The Vercel landing page source lives in `Website/`.
 cd Website
 npm install
 npm run build
+vercel login
 vercel --prod
 ```
 
