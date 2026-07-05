@@ -208,6 +208,7 @@ static NSString * const PasteVBundleIdentifier = @"dev.foysal.pastev";
 @interface PasteController : NSObject
 @property (nonatomic, strong) NSRunningApplication *targetApplication;
 - (void)rememberCurrentTarget;
+- (void)startTrackingActiveApplication;
 - (BOOL)isAccessibilityTrusted;
 - (void)requestAccessibilityPermission;
 - (BOOL)pasteIntoRememberedTarget;
@@ -221,6 +222,16 @@ static NSString * const PasteVBundleIdentifier = @"dev.foysal.pastev";
     if (![current.bundleIdentifier isEqualToString:NSBundle.mainBundle.bundleIdentifier]) {
         self.targetApplication = current;
     }
+}
+
+- (void)startTrackingActiveApplication {
+    [self rememberCurrentTarget];
+    [NSWorkspace.sharedWorkspace.notificationCenter addObserverForName:NSWorkspaceDidActivateApplicationNotification object:nil queue:NSOperationQueue.mainQueue usingBlock:^(NSNotification *notification) {
+        NSRunningApplication *app = notification.userInfo[NSWorkspaceApplicationKey];
+        if (app && ![app.bundleIdentifier isEqualToString:NSBundle.mainBundle.bundleIdentifier]) {
+            self.targetApplication = app;
+        }
+    }];
 }
 
 - (BOOL)isAccessibilityTrusted {
@@ -238,8 +249,15 @@ static NSString * const PasteVBundleIdentifier = @"dev.foysal.pastev";
         return NO;
     }
 
-    [self.targetApplication activateWithOptions:0];
-    dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(0.12 * NSEC_PER_SEC)), dispatch_get_main_queue(), ^{
+    NSRunningApplication *target = self.targetApplication;
+    if (target && !target.active) {
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wdeprecated-declarations"
+        [target activateWithOptions:NSApplicationActivateIgnoringOtherApps];
+#pragma clang diagnostic pop
+    }
+
+    dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(0.32 * NSEC_PER_SEC)), dispatch_get_main_queue(), ^{
         CGEventSourceRef source = CGEventSourceCreate(kCGEventSourceStateHIDSystemState);
         CGEventRef keyDown = CGEventCreateKeyboardEvent(source, kVK_ANSI_V, true);
         CGEventRef keyUp = CGEventCreateKeyboardEvent(source, kVK_ANSI_V, false);
@@ -525,10 +543,12 @@ static NSString * const PasteVBundleIdentifier = @"dev.foysal.pastev";
         row.pickHandler = ^(ClipboardItem *picked) {
             [weakSelf.store copyItemToPasteboard:picked];
             [weakSelf close];
-            BOOL didPaste = [weakSelf.pasteController pasteIntoRememberedTarget];
-            if (!didPaste) {
-                [weakSelf showCopyFallbackNoticeIfNeeded];
-            }
+            dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(0.08 * NSEC_PER_SEC)), dispatch_get_main_queue(), ^{
+                BOOL didPaste = [weakSelf.pasteController pasteIntoRememberedTarget];
+                if (!didPaste) {
+                    [weakSelf showCopyFallbackNoticeIfNeeded];
+                }
+            });
         };
         row.copyOnlyHandler = ^(ClipboardItem *picked) {
             [weakSelf.store copyItemToPasteboard:picked];
@@ -627,6 +647,7 @@ static OSStatus HotKeyHandler(EventHandlerCallRef nextHandler, EventRef event, v
     _store = [[ClipboardStore alloc] init];
     [_store start];
     _pasteController = [[PasteController alloc] init];
+    [_pasteController startTrackingActiveApplication];
     _panelController = [[PanelController alloc] initWithStore:_store pasteController:_pasteController];
     [self installHotKey];
     [self installStatusItem];
