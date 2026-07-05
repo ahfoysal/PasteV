@@ -38,7 +38,7 @@ https://pastev.vercel.app
 
 ## Install
 
-1. Download `PasteV-0.1.1.dmg` from the latest release.
+1. Download `PasteV-0.1.2.dmg` from the latest release.
 2. Open the DMG.
 3. Drag `PasteV.app` into `Applications`.
 4. Open PasteV.
@@ -46,6 +46,8 @@ https://pastev.vercel.app
 6. Quit and reopen PasteV once after granting permission.
 
 Accessibility permission is required only for the automatic paste step. Without it, PasteV can still copy the selected history item back to the clipboard.
+
+If macOS refuses Accessibility permission, PasteV still remains usable: selecting a history item copies it and closes the panel, then you can press `Command + V` in the target app. Use the menu bar item **Fix Accessibility Permission** to open the correct Settings pane for auto-paste.
 
 ## Build Locally
 
@@ -70,7 +72,7 @@ cd /Users/foysal/Projects/PasteV
 The DMG is created at:
 
 ```text
-Releases/PasteV-0.1.1.dmg
+Releases/PasteV-0.1.2.dmg
 ```
 
 ## Landing Page
@@ -93,7 +95,7 @@ vercel --prod
 
 macOS does not expose Apple’s built-in clipboard history to third-party apps, so PasteV starts building history from the moment it is running.
 
-During development, rebuilding the app can invalidate Accessibility permission because macOS tracks the signed app identity. For normal use, install the release DMG into `Applications` and grant permission to that app.
+During development, rebuilding the app can invalidate Accessibility permission because macOS tracks the signed app identity. For normal use, install the release DMG into `Applications` and grant permission to that installed app.
 
 ## Tech
 

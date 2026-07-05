@@ -3,6 +3,7 @@
 #import <Carbon/Carbon.h>
 
 static NSString * const PasteVDefaultsKey = @"PasteV.clipboardItems.objc";
+static NSString * const PasteVBundleIdentifier = @"dev.foysal.pastev";
 
 @interface ClipboardItem : NSObject <NSSecureCoding>
 @property (nonatomic, strong) NSUUID *uuid;
@@ -209,7 +210,8 @@ static NSString * const PasteVDefaultsKey = @"PasteV.clipboardItems.objc";
 - (void)rememberCurrentTarget;
 - (BOOL)isAccessibilityTrusted;
 - (void)requestAccessibilityPermission;
-- (void)pasteIntoRememberedTarget;
+- (BOOL)pasteIntoRememberedTarget;
+- (void)openAccessibilitySettings;
 @end
 
 @implementation PasteController
@@ -228,12 +230,12 @@ static NSString * const PasteVDefaultsKey = @"PasteV.clipboardItems.objc";
 - (void)requestAccessibilityPermission {
     NSDictionary *options = @{(__bridge NSString *)kAXTrustedCheckOptionPrompt: @YES};
     AXIsProcessTrustedWithOptions((__bridge CFDictionaryRef)options);
+    [self openAccessibilitySettings];
 }
 
-- (void)pasteIntoRememberedTarget {
+- (BOOL)pasteIntoRememberedTarget {
     if (![self isAccessibilityTrusted]) {
-        [self requestAccessibilityPermission];
-        return;
+        return NO;
     }
 
     [self.targetApplication activateWithOptions:0];
@@ -249,6 +251,12 @@ static NSString * const PasteVDefaultsKey = @"PasteV.clipboardItems.objc";
         if (keyUp) CFRelease(keyUp);
         if (source) CFRelease(source);
     });
+    return YES;
+}
+
+- (void)openAccessibilitySettings {
+    NSURL *url = [NSURL URLWithString:@"x-apple.systempreferences:com.apple.preference.security?Privacy_Accessibility"];
+    [NSWorkspace.sharedWorkspace openURL:url];
 }
 
 @end
@@ -365,6 +373,7 @@ static NSString * const PasteVDefaultsKey = @"PasteV.clipboardItems.objc";
     NSScrollView *_scrollView;
     NSTextField *_footer;
     id _outsideMonitor;
+    BOOL _didShowCopyFallbackNotice;
 }
 
 - (instancetype)initWithStore:(ClipboardStore *)store pasteController:(PasteController *)pasteController {
@@ -448,13 +457,6 @@ static NSString * const PasteVDefaultsKey = @"PasteV.clipboardItems.objc";
     statusDot.layer.backgroundColor = ([self.pasteController isAccessibilityTrusted] ? NSColor.systemGreenColor : NSColor.systemOrangeColor).CGColor;
     [root addSubview:statusDot];
 
-    if (![self.pasteController isAccessibilityTrusted]) {
-        NSButton *allow = [NSButton buttonWithTitle:@"Allow" target:self action:@selector(requestPermission:)];
-        allow.frame = NSMakeRect(348, 8, 68, 24);
-        allow.bezelStyle = NSBezelStyleRounded;
-        [root addSubview:allow];
-    }
-
     [self rebuildRows];
     [self positionPanelAtMouse];
     [_panel orderFrontRegardless];
@@ -498,7 +500,7 @@ static NSString * const PasteVDefaultsKey = @"PasteV.clipboardItems.objc";
     }
 
     NSArray *items = [self.store orderedItemsMatching:@""];
-    NSString *permission = [self.pasteController isAccessibilityTrusted] ? @"Ready to paste" : @"Accessibility permission needed";
+    NSString *permission = [self.pasteController isAccessibilityTrusted] ? @"Auto-paste on" : @"Auto-paste off";
     _footer.stringValue = [NSString stringWithFormat:@"%@ • %lu items", permission, (unsigned long)self.store.items.count];
 
     _scrollView.hasVerticalScroller = items.count > [self maxVisibleRows];
@@ -523,7 +525,10 @@ static NSString * const PasteVDefaultsKey = @"PasteV.clipboardItems.objc";
         row.pickHandler = ^(ClipboardItem *picked) {
             [weakSelf.store copyItemToPasteboard:picked];
             [weakSelf close];
-            [weakSelf.pasteController pasteIntoRememberedTarget];
+            BOOL didPaste = [weakSelf.pasteController pasteIntoRememberedTarget];
+            if (!didPaste) {
+                [weakSelf showCopyFallbackNoticeIfNeeded];
+            }
         };
         row.copyOnlyHandler = ^(ClipboardItem *picked) {
             [weakSelf.store copyItemToPasteboard:picked];
@@ -566,6 +571,18 @@ static NSString * const PasteVDefaultsKey = @"PasteV.clipboardItems.objc";
     [self.pasteController requestAccessibilityPermission];
 }
 
+- (void)showCopyFallbackNoticeIfNeeded {
+    if (_didShowCopyFallbackNotice) {
+        return;
+    }
+    _didShowCopyFallbackNotice = YES;
+    NSAlert *alert = [[NSAlert alloc] init];
+    alert.messageText = @"Copied to clipboard";
+    alert.informativeText = @"macOS is blocking automatic paste. Press Command + V in the target app, or choose Fix Accessibility Permission from the PasteV menu bar icon.";
+    [alert addButtonWithTitle:@"OK"];
+    [alert runModal];
+}
+
 - (NSUInteger)maxVisibleRows {
     return 6;
 }
@@ -605,6 +622,7 @@ static OSStatus HotKeyHandler(EventHandlerCallRef nextHandler, EventRef event, v
 }
 
 - (void)applicationDidFinishLaunching:(NSNotification *)notification {
+    [self terminateDuplicateInstances];
     [NSApp setActivationPolicy:NSApplicationActivationPolicyAccessory];
     _store = [[ClipboardStore alloc] init];
     [_store start];
@@ -634,7 +652,7 @@ static OSStatus HotKeyHandler(EventHandlerCallRef nextHandler, EventRef event, v
 
     NSMenu *menu = [[NSMenu alloc] initWithTitle:@"PasteV"];
     [menu addItem:[[NSMenuItem alloc] initWithTitle:@"Show Clipboard" action:@selector(showClipboard:) keyEquivalent:@""]];
-    [menu addItem:[[NSMenuItem alloc] initWithTitle:@"Request Accessibility Permission" action:@selector(requestPermission:) keyEquivalent:@""]];
+    [menu addItem:[[NSMenuItem alloc] initWithTitle:@"Fix Accessibility Permission" action:@selector(requestPermission:) keyEquivalent:@""]];
     [menu addItem:NSMenuItem.separatorItem];
     [menu addItem:[[NSMenuItem alloc] initWithTitle:@"Quit PasteV" action:@selector(quit:) keyEquivalent:@"q"]];
     _statusItem.menu = menu;
@@ -650,6 +668,16 @@ static OSStatus HotKeyHandler(EventHandlerCallRef nextHandler, EventRef event, v
 
 - (void)requestPermission:(id)sender {
     [_pasteController requestAccessibilityPermission];
+}
+
+- (void)terminateDuplicateInstances {
+    pid_t currentPID = NSProcessInfo.processInfo.processIdentifier;
+    NSArray<NSRunningApplication *> *apps = [NSRunningApplication runningApplicationsWithBundleIdentifier:PasteVBundleIdentifier];
+    for (NSRunningApplication *app in apps) {
+        if (app.processIdentifier != currentPID) {
+            [app terminate];
+        }
+    }
 }
 
 - (void)quit:(id)sender {
