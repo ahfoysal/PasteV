@@ -1,0 +1,8 @@
+.DS_Store
+.build/
+Releases/*.dmg
+Releases/*.zip
+Website/.vercel/
+Website/dist/
+Website/node_modules/
+*.xcuserdata

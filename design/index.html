@@ -1,0 +1,595 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>PasteV Design Prototype</title>
+  <style>
+    :root {
+      color-scheme: dark;
+      --bg: #111417;
+      --surface: rgba(34, 38, 43, 0.88);
+      --surface-strong: rgba(45, 50, 56, 0.96);
+      --line: rgba(255, 255, 255, 0.13);
+      --text: #f4f6f8;
+      --muted: #a7afb8;
+      --accent: #5fd3b3;
+      --blue: #75a7ff;
+      --danger: #ff7777;
+      --shadow: 0 26px 80px rgba(0, 0, 0, 0.46);
+      --radius: 8px;
+      font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", sans-serif;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      background:
+        linear-gradient(120deg, rgba(95, 211, 179, 0.09), transparent 34%),
+        linear-gradient(240deg, rgba(117, 167, 255, 0.10), transparent 38%),
+        var(--bg);
+      color: var(--text);
+      overflow: hidden;
+    }
+
+    .desktop {
+      min-height: 100vh;
+      padding: 22px;
+      display: grid;
+      grid-template-rows: auto 1fr;
+      gap: 18px;
+    }
+
+    .menu-bar {
+      height: 32px;
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      background: rgba(19, 22, 25, 0.68);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 12px;
+      backdrop-filter: blur(18px);
+      font-size: 13px;
+      color: var(--muted);
+    }
+
+    .menu-left,
+    .menu-right {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      min-width: 0;
+    }
+
+    .app-icon {
+      width: 18px;
+      height: 18px;
+      display: grid;
+      place-items: center;
+      color: var(--accent);
+    }
+
+    .workspace {
+      position: relative;
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      background: rgba(255, 255, 255, 0.035);
+      overflow: hidden;
+    }
+
+    .fake-app {
+      position: absolute;
+      inset: 54px auto auto 58px;
+      width: min(680px, calc(100vw - 120px));
+      height: 430px;
+      border-radius: var(--radius);
+      border: 1px solid var(--line);
+      background: #f7f8f8;
+      color: #202327;
+      box-shadow: 0 24px 58px rgba(0, 0, 0, 0.28);
+      overflow: hidden;
+    }
+
+    .fake-title {
+      height: 38px;
+      border-bottom: 1px solid #d9dddf;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 0 14px;
+      color: #606870;
+      font-size: 13px;
+      background: #eef1f2;
+    }
+
+    .dot {
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      background: #d8dde0;
+    }
+
+    .editor {
+      height: calc(100% - 38px);
+      padding: 22px;
+      font: 15px/1.5 ui-monospace, SFMono-Regular, Menlo, monospace;
+      color: #373c42;
+      background:
+        repeating-linear-gradient(#fff 0, #fff 31px, #eef1f4 32px),
+        #fff;
+    }
+
+    .hint {
+      position: absolute;
+      left: 58px;
+      bottom: 34px;
+      max-width: 520px;
+      color: var(--muted);
+      font-size: 13px;
+      line-height: 1.45;
+    }
+
+    .hotkey {
+      color: var(--text);
+      border: 1px solid var(--line);
+      border-bottom-color: rgba(255,255,255,.24);
+      background: rgba(255,255,255,.08);
+      border-radius: 6px;
+      padding: 2px 7px;
+      font-size: 12px;
+    }
+
+    .panel {
+      position: absolute;
+      left: min(760px, calc(100vw - 468px));
+      top: 92px;
+      width: 430px;
+      height: 520px;
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      background: var(--surface);
+      box-shadow: var(--shadow);
+      backdrop-filter: blur(28px) saturate(135%);
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+
+    .panel-header {
+      padding: 14px;
+      display: grid;
+      gap: 10px;
+    }
+
+    .panel-title {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      min-width: 0;
+    }
+
+    .panel-title h1 {
+      font-size: 18px;
+      line-height: 1.2;
+      margin: 0;
+      font-weight: 650;
+      letter-spacing: 0;
+    }
+
+    .spacer { flex: 1; }
+
+    button {
+      border: 1px solid transparent;
+      background: transparent;
+      color: var(--text);
+      font: inherit;
+      cursor: default;
+    }
+
+    .icon-button {
+      width: 30px;
+      height: 30px;
+      display: grid;
+      place-items: center;
+      border-radius: 7px;
+      color: var(--muted);
+    }
+
+    .icon-button:hover {
+      background: rgba(255, 255, 255, 0.09);
+      color: var(--text);
+    }
+
+    .search {
+      display: none;
+      height: 34px;
+      border-radius: var(--radius);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      background: rgba(255, 255, 255, 0.08);
+      align-items: center;
+      gap: 8px;
+      padding: 0 10px;
+      color: var(--muted);
+    }
+
+    .search input {
+      min-width: 0;
+      flex: 1;
+      border: 0;
+      outline: 0;
+      color: var(--text);
+      background: transparent;
+      font: inherit;
+      font-size: 13px;
+    }
+
+    .divider {
+      height: 1px;
+      background: var(--line);
+    }
+
+    .list {
+      flex: 1;
+      overflow: auto;
+      padding: 10px;
+      display: grid;
+      align-content: start;
+      gap: 6px;
+    }
+
+    .item {
+      min-height: 62px;
+      border: 1px solid rgba(255, 255, 255, 0.05);
+      border-radius: var(--radius);
+      background: rgba(255, 255, 255, 0.06);
+      display: grid;
+      grid-template-columns: 22px 1fr auto;
+      gap: 9px;
+      padding: 10px;
+    }
+
+    .item:hover,
+    .item.selected {
+      background: rgba(95, 211, 179, 0.13);
+      border-color: rgba(95, 211, 179, 0.36);
+    }
+
+    .pin {
+      color: var(--accent);
+    }
+
+    .type-icon {
+      width: 20px;
+      height: 20px;
+      display: grid;
+      place-items: center;
+      color: var(--muted);
+      padding-top: 1px;
+    }
+
+    .item-main {
+      min-width: 0;
+      display: grid;
+      gap: 5px;
+    }
+
+    .item-text {
+      color: var(--text);
+      font-size: 13px;
+      line-height: 1.3;
+      max-height: 50px;
+      overflow: hidden;
+    }
+
+    .meta {
+      color: var(--muted);
+      font-size: 11px;
+      display: flex;
+      gap: 8px;
+      align-items: center;
+    }
+
+    .tag {
+      color: var(--accent);
+    }
+
+    .quick {
+      color: var(--muted);
+      font-size: 12px;
+      align-self: start;
+      padding-top: 2px;
+    }
+
+    .footer {
+      height: 38px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 0 14px;
+      color: var(--muted);
+      font-size: 12px;
+    }
+
+    .status {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: var(--accent);
+      box-shadow: 0 0 0 3px rgba(95, 211, 179, 0.12);
+      flex: 0 0 auto;
+    }
+
+    .context-menu {
+      position: absolute;
+      left: min(1120px, calc(100vw - 186px));
+      top: 226px;
+      width: 168px;
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      background: var(--surface-strong);
+      box-shadow: 0 18px 46px rgba(0, 0, 0, 0.42);
+      padding: 6px;
+      display: grid;
+      gap: 2px;
+    }
+
+    .menu-action {
+      height: 30px;
+      border-radius: 6px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 0 8px;
+      color: var(--text);
+      font-size: 13px;
+    }
+
+    .menu-action:hover {
+      background: rgba(255,255,255,.09);
+    }
+
+    .danger {
+      color: var(--danger);
+    }
+
+    .settings-pop {
+      position: absolute;
+      right: 28px;
+      bottom: 28px;
+      width: 330px;
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      background: rgba(30, 34, 38, 0.92);
+      backdrop-filter: blur(24px);
+      box-shadow: var(--shadow);
+      padding: 14px;
+      display: grid;
+      gap: 12px;
+    }
+
+    .settings-pop h2 {
+      margin: 0;
+      font-size: 15px;
+      letter-spacing: 0;
+    }
+
+    .setting-row {
+      display: grid;
+      grid-template-columns: 1fr auto;
+      gap: 10px;
+      align-items: center;
+      font-size: 13px;
+      color: var(--text);
+    }
+
+    .setting-row span {
+      color: var(--muted);
+      font-size: 12px;
+      display: block;
+      margin-top: 2px;
+    }
+
+    .toggle {
+      width: 42px;
+      height: 24px;
+      padding: 2px;
+      border-radius: 999px;
+      background: rgba(95,211,179,.32);
+      border: 1px solid rgba(95,211,179,.45);
+    }
+
+    .toggle::after {
+      content: "";
+      display: block;
+      width: 18px;
+      height: 18px;
+      margin-left: 16px;
+      border-radius: 50%;
+      background: var(--text);
+    }
+
+    svg {
+      width: 17px;
+      height: 17px;
+      stroke: currentColor;
+      stroke-width: 2;
+      fill: none;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+    }
+
+    @media (max-width: 900px) {
+      .fake-app {
+        inset: 46px 18px auto 18px;
+        width: calc(100% - 36px);
+      }
+
+      .panel {
+        left: 18px;
+        right: 18px;
+        top: 128px;
+        width: auto;
+      }
+
+      .settings-pop {
+        display: none;
+      }
+
+      .context-menu {
+        left: auto;
+        right: 28px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <main class="desktop">
+    <div class="menu-bar">
+      <div class="menu-left">
+        <span class="app-icon">
+          <svg viewBox="0 0 24 24"><path d="M8 4h8v4h4v12H4V8h4z"/><path d="M8 8h8"/></svg>
+        </span>
+        <strong>PasteV</strong>
+        <span>Control + V</span>
+      </div>
+      <div class="menu-right">
+        <span>Ready</span>
+        <span>2:41 PM</span>
+      </div>
+    </div>
+
+    <section class="workspace" aria-label="PasteV desktop preview">
+      <div class="fake-app">
+        <div class="fake-title">
+          <span class="dot"></span>
+          <span class="dot"></span>
+          <span class="dot"></span>
+          <span>Notes.md</span>
+        </div>
+        <div class="editor">
+          Meeting notes<br />
+          - Paste selected clipboard item here<br />
+          - Keep pinned items always available<br />
+          - Open panel exactly where the pointer is
+        </div>
+      </div>
+
+      <p class="hint">
+        User presses <span class="hotkey">Control</span> + <span class="hotkey">V</span>.
+        PasteV opens at the mouse position, selection pastes into the previous app, and right-click opens item actions.
+      </p>
+
+      <aside class="panel" aria-label="Clipboard history panel">
+        <header class="panel-header">
+          <div class="panel-title">
+            <h1>Clipboard</h1>
+            <div class="spacer"></div>
+            <button class="icon-button" title="Clear unpinned items">
+              <svg viewBox="0 0 24 24"><path d="M3 6h18"/><path d="M8 6V4h8v2"/><path d="M6 6l1 15h10l1-15"/></svg>
+            </button>
+            <button class="icon-button" title="Settings">
+              <svg viewBox="0 0 24 24"><path d="M12 15.5a3.5 3.5 0 1 0 0-7 3.5 3.5 0 0 0 0 7z"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.9l.1.1-2.1 2.1-.1-.1a1.7 1.7 0 0 0-1.9-.3 1.7 1.7 0 0 0-1 1.5V20h-3v-.1a1.7 1.7 0 0 0-1-1.5 1.7 1.7 0 0 0-1.9.3l-.1.1-2.1-2.1.1-.1A1.7 1.7 0 0 0 5 15a1.7 1.7 0 0 0-1.5-1H3v-3h.5A1.7 1.7 0 0 0 5 10a1.7 1.7 0 0 0-.3-1.9l-.1-.1 2.1-2.1.1.1A1.7 1.7 0 0 0 8.7 6a1.7 1.7 0 0 0 1-1.5V4h3v.5a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.9-.3l.1-.1L18 7.7l-.1.1a1.7 1.7 0 0 0-.3 1.9 1.7 1.7 0 0 0 1.5 1H21v3h-1.6a1.7 1.7 0 0 0 0 1.3z"/></svg>
+            </button>
+          </div>
+
+          <label class="search">
+            <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="m20 20-4-4"/></svg>
+            <input value="" placeholder="Search copied text, links, code" />
+          </label>
+        </header>
+
+        <div class="divider"></div>
+
+        <div class="list">
+          <article class="item selected">
+            <div class="type-icon pin">
+              <svg viewBox="0 0 24 24"><path d="M12 17v5"/><path d="M5 17h14"/><path d="M9 3h6l-1 7 4 5H6l4-5z"/></svg>
+            </div>
+            <div class="item-main">
+              <div class="item-text">ssh foysal@production-server</div>
+              <div class="meta"><span class="tag">Pinned</span><span>Text</span><span>Today 2:35 PM</span></div>
+            </div>
+            <div class="quick">⌘1</div>
+          </article>
+
+          <article class="item">
+            <div class="type-icon">
+              <svg viewBox="0 0 24 24"><path d="M14 2H6v20h12V8z"/><path d="M14 2v6h6"/><path d="M9 13h6"/><path d="M9 17h6"/></svg>
+            </div>
+            <div class="item-main">
+              <div class="item-text">The closest macOS clone is a floating NSPanel near the cursor with NSPasteboard history.</div>
+              <div class="meta"><span>Text</span><span>Today 2:29 PM</span></div>
+            </div>
+            <div class="quick">⌘2</div>
+          </article>
+
+          <article class="item">
+            <div class="type-icon">
+              <svg viewBox="0 0 24 24"><path d="M10 13a5 5 0 0 0 7 0l3-3a5 5 0 0 0-7-7l-1.5 1.5"/><path d="M14 11a5 5 0 0 0-7 0l-3 3a5 5 0 0 0 7 7l1.5-1.5"/></svg>
+            </div>
+            <div class="item-main">
+              <div class="item-text">https://developer.apple.com/documentation/appkit/nspasteboard</div>
+              <div class="meta"><span>Link</span><span>Today 2:18 PM</span></div>
+            </div>
+            <div class="quick">⌘3</div>
+          </article>
+
+          <article class="item">
+            <div class="type-icon">
+              <svg viewBox="0 0 24 24"><path d="m16 18 6-6-6-6"/><path d="m8 6-6 6 6 6"/></svg>
+            </div>
+            <div class="item-main">
+              <div class="item-text">RegisterEventHotKey(kVK_ANSI_V, controlKey, hotKeyID, target, 0, &ref);</div>
+              <div class="meta"><span>Code</span><span>Yesterday 11:04 PM</span></div>
+            </div>
+            <div class="quick">⌘4</div>
+          </article>
+        </div>
+
+        <div class="divider"></div>
+
+        <footer class="footer">
+          <span class="status"></span>
+          <span>Accessibility allowed</span>
+          <div class="spacer"></div>
+          <span>60 items max</span>
+        </footer>
+      </aside>
+
+      <nav class="context-menu" aria-label="Right click menu">
+        <button class="menu-action">
+          <svg viewBox="0 0 24 24"><path d="M12 17v5"/><path d="M5 17h14"/><path d="M9 3h6l-1 7 4 5H6l4-5z"/></svg>
+          Unpin
+        </button>
+        <button class="menu-action">
+          <svg viewBox="0 0 24 24"><path d="M8 17h8"/><path d="M8 12h8"/><path d="M10 7h4"/><path d="M6 3h12v18H6z"/></svg>
+          Copy only
+        </button>
+        <button class="menu-action danger">
+          <svg viewBox="0 0 24 24"><path d="M3 6h18"/><path d="M8 6V4h8v2"/><path d="M6 6l1 15h10l1-15"/></svg>
+          Delete
+        </button>
+      </nav>
+
+      <aside class="settings-pop" aria-label="Settings preview">
+        <h2>Functions</h2>
+        <div class="setting-row">
+          <div>Open at mouse position<span>Exactly like Windows clipboard flyout behavior.</span></div>
+          <div class="toggle"></div>
+        </div>
+        <div class="setting-row">
+          <div>Paste after selecting<span>Requires macOS Accessibility permission.</span></div>
+          <div class="toggle"></div>
+        </div>
+        <div class="setting-row">
+          <div>Keep pinned forever<span>Pinned rows stay above normal history.</span></div>
+          <div class="toggle"></div>
+        </div>
+      </aside>
+    </section>
+  </main>
+</body>
+</html>
